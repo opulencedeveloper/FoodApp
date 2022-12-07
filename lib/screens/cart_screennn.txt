@@ -1,0 +1,119 @@
+import 'package:flutter/material.dart';
+import "package:provider/provider.dart";
+
+import "../provider/cart.dart";
+
+import "../widgets/cart_item.dart";
+
+class CartScreen extends StatelessWidget {
+  static const routeName = "/cart";
+  const CartScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final cart = Provider.of<Cart>(context);
+    final dynamic appBar = AppBar(
+      backgroundColor: Theme.of(context).primaryColor,
+      centerTitle: true,
+      leading: BackButton(
+        color: Theme.of(context).colorScheme.secondary,
+      ),
+      title: Text(
+        "Cart",
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.secondary,
+        ),
+      ),
+    );
+    return Scaffold(
+      appBar: appBar,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            // mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Container(
+                height: (mediaQuery.size.height - appBar.preferredSize.height - mediaQuery.padding.top) * 0.8,
+                child: Expanded(
+                  child: ListView.builder(
+                    itemCount: cart.items.length,
+                    itemBuilder: (ctx, i) => CartFoodItem(
+                      id: cart.items.values.toList()[i].id,
+                      //cart.items.keys.toList()[i],
+                      price: cart.items.values.toList()[i].price,
+                      quantity: cart.items.values.toList()[i].quantity,
+                      title: cart.items.values.toList()[i].title,
+                    ),
+                  ),
+                ),
+              ),
+              //const Divider(),
+              Container(
+                height: (mediaQuery.size.height - appBar.preferredSize.height - mediaQuery.padding.top) * 0.2,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 20,
+                ),
+                child: ListTile(
+                  isThreeLine: true,
+                  contentPadding: const EdgeInsets.only(left: 0),
+                  title: const Text(
+                    "Total",
+                    style: TextStyle(
+                      //fontSize: 33,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  subtitle: RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: "\$${cart.totalAmount.toStringAsFixed(2)}\n",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        TextSpan(
+                          text: "Free Domestic Shiping",
+                          style: const TextStyle(
+                            fontSize: 17,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  trailing: Container(
+                    height: mediaQuery.size.height * 0.08,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: const BorderRadius.all(
+                        Radius.circular(20),
+                      ),
+                    ),
+                    child: Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: TextButton.icon(
+                        icon: Icon(Icons.arrow_left_outlined, color: Theme.of(context).colorScheme.secondary),
+                        label: Text(
+                          "CHECK OUT",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                        onPressed: () {},
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

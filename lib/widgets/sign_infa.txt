@@ -1,0 +1,243 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/http_exception.dart';
+import "../provider/auth.dart";
+import "../widgets/sign_up.dart";
+import "../screens/tabs_screen.dart";
+
+//enum AuthMode { Signup, Login }
+
+class AuthScreen extends StatefulWidget {
+  static const routeName = "auth-screen";
+  const AuthScreen({Key? key}) : super(key: key);
+  @override
+  _AuthScreenState createState() => _AuthScreenState();
+}
+
+class _AuthScreenState extends State<AuthScreen> {
+  // final _emailController = TextEditingController();
+  // final _passwordController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey();
+  var _authMode = true;
+  var _isLoading = false;
+  void setAuthMode() {
+    setState(() {
+      _authMode = !_authMode;
+    });
+  }
+
+  Map<String, String> _authData = {
+    'email': '',
+    'password': '',
+  };
+  //AuthMode _authMode = AuthMode.Login;
+  void _showErrorDialog(String message) {
+    showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(title: const Text("An Error Occurred"), content: Text(message), actions: [
+              TextButton(
+                  child: const Text("Okay"),
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                  })
+            ]));
+  }
+
+  Future<void> _submits() async {
+    if (!_formKey.currentState!.validate()) {
+      // Invalid!
+      return;
+    }
+    _formKey.currentState?.save();
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print("Sign up");
+      print(_authData["email"] as String);
+      print(_authData["username"] as String);
+      print(_authData["password"] as String);
+      // Log user in
+      await Provider.of<Auth>(context, listen: false).signIn(
+        _authData["email"].toString(),
+        _authData["password"].toString(),
+      );
+    } on HttpException catch (error) {
+//HttpException is from the file u created in the models folder, u caught and passed this exception in the auth.dart file
+      var errorMessage = "Authentication failed";
+      if (error.toString().contains("EMAIL_EXISTS")) {
+        errorMessage = "This email address is already in use";
+      } else if (error.toString().contains("INVALID_EMAIL")) {
+        errorMessage = "This is to a valid email address";
+      } else if (error.toString().contains("WEAK_PASSWORD")) {
+        errorMessage = "This password is too weak";
+      } else if (error.toString().contains("EMAIL_NOT_FOUND")) {
+        errorMessage = "Could not find a user with that email";
+      } else if (error.toString().contains("INVALID_PASSWORD")) {
+        errorMessage = "Invalid password";
+      }
+      _showErrorDialog(errorMessage);
+    } catch (error) {
+//u catch errors here that is not of type HttpException, like ntwork error, u hv to use this pls
+//this error can be shown when u try to login or sign up without network
+      const errorMessage = "Could not authenticate you, Please try again later. ";
+      _showErrorDialog(errorMessage);
+    }
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final theme = Theme.of(context);
+
+    //  final _passwordController = TextEditingController();
+
+    print("auth");
+    return Column(children: [
+          
+          Container(
+            
+            child: Form(
+                key: _formKey,
+                child: LayoutBuilder(builder: (ctx, constraints) {
+                  return Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+                    Container(
+                      //decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                      height: constraints.maxHeight * 0.07,
+                    ),
+                    Container(
+                        // decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                        height: constraints.maxHeight * 0.1,
+                        width: double.infinity,
+                        //alignment: Alignment.center,
+                        child: const FittedBox(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Log-in",
+                            style: TextStyle(
+                              //color: theme.colorScheme.secondary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )),
+                    // Container(
+                    //   decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                    //   height: constraints.maxHeight * 0.05,
+                    // ),
+                    Container(
+                      // decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                      ////height: constraints.maxHeight * 0.13,
+                      //width: constraints.maxWidth * 0.5,
+
+                      child: TextFormField(
+                        //autovalidateMode: AutovalidateMode.onUserInteraction,
+                        //controller: _emailController,
+                        decoration: InputDecoration(
+                          labelText: 'E-Mail',
+                          prefixIcon: Icon(
+                            Icons.email,
+                          ),
+                          //fillColor: Colors.white,
+                          //filled: true,
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value!.isEmpty || !value.contains('@')) {
+                            return 'Invalid email!';
+                          }
+                          return null;
+                        },
+                        onSaved: (value) {
+                          _authData['email'] = value as String;
+                        },
+                      ),
+                    ),
+                    // Container(
+                    //   decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                    //   height: constraints.maxHeight * 0.025,
+                    // ),
+
+                    // Container(
+                    //   decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                    //   height: constraints.maxHeight * 0.025,
+                    // ),
+                    Container(
+                      //decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                      ////height: constraints.maxHeight * 0.13,
+                      child: TextFormField(
+                          // controller: _passwordController,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: Icon(
+                              Icons.lock,
+                            ),
+                            
+                            ),
+                          
+                          
+                          //controller: _passwordController,
+                          validator: (value) {
+                            if (value!.isEmpty || value.length < 5) {
+                              return 'Password is too short!';
+                            }
+                          },
+                          onSaved: (value) {
+                            _authData['password'] = value as String;
+                          },
+                        ), 
+                      
+                    ),
+                    Container(
+                      //decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                      height: constraints.maxHeight * 0.065,
+                      width: double.infinity,
+                      child: FittedBox(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(child: const Text("Forgot Password?"), onPressed: () {}),
+                      ),
+                    ),
+                    Container(
+                      //decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                      height: constraints.maxHeight * 0.08,
+                    ),
+                    Container(
+                      //   decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                      height: constraints.maxHeight * 0.1,
+                      width: double.infinity,
+                      child: _isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : _isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : ElevatedButton(
+                                  child: const Text("Login"),
+                                  onPressed: _submits,
+                                ),
+                    ),
+                    Container(
+                      // decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                      height: constraints.maxHeight * 0.078,
+                      width: double.infinity,
+                      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const FittedBox(
+                          child: Text(
+                            "Don't have an account ? ",
+                          ),
+                        ),
+                        TextButton(
+                          child: const FittedBox(child: Text("Sign - up")),
+                          onPressed: null,
+                        )
+                      ]),
+                    ),
+                  ]);
+                })),
+          ),
+        ]);
+  }
+}
